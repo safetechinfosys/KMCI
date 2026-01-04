@@ -5,7 +5,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 // --- CONFIGURATION ---
-$host = '193.203.184.215'; // Use 'localhost' on Hostinger for better speed
+$host = 'localhost'; // Use 'localhost' on Hostinger for better speed
 $db   = 'u895470646_KMCI';
 $user = 'u895470646_administrator';
 $pass = '0^qi7N:t';
@@ -53,10 +53,12 @@ if ($method === 'POST') {
     if ($action === 'save_group') {
         $pdo->beginTransaction();
         try {
+            $paymentMethod = $data['paymentMethod'] ?? 'Cash';
+            
             if (isset($data['id']) && $data['id']) {
                 // Update
-                $stmt = $pdo->prepare("UPDATE registration_groups SET name=?, total_fee=?, paid=?, adults_count=?, kids_count=? WHERE id=?");
-                $stmt->execute([$data['name'], $data['totalFee'], (int)$data['paid'], $data['adultsCount'], $data['kidsCount'], $data['id']]);
+                $stmt = $pdo->prepare("UPDATE registration_groups SET name=?, total_fee=?, paid=?, adults_count=?, kids_count=?, payment_method=? WHERE id=?");
+                $stmt->execute([$data['name'], $data['totalFee'], (int)$data['paid'], $data['adultsCount'], $data['kidsCount'], $paymentMethod, $data['id']]);
                 $groupId = $data['id'];
                 
                 // Delete existing attendees
@@ -64,8 +66,8 @@ if ($method === 'POST') {
                 $stmtDel->execute([$groupId]);
             } else {
                 // Insert
-                $stmt = $pdo->prepare("INSERT INTO registration_groups (name, total_fee, paid, adults_count, kids_count) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$data['name'], $data['totalFee'], (int)$data['paid'], $data['adultsCount'], $data['kidsCount']]);
+                $stmt = $pdo->prepare("INSERT INTO registration_groups (name, total_fee, paid, adults_count, kids_count, payment_method) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$data['name'], $data['totalFee'], (int)$data['paid'], $data['adultsCount'], $data['kidsCount'], $paymentMethod]);
                 $groupId = $pdo->lastInsertId();
             }
 
@@ -100,7 +102,6 @@ if ($method === 'POST') {
 if ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;
     if ($id) {
-        // Cascade delete will handle attendees if FK is set correctly
         $stmt = $pdo->prepare("DELETE FROM registration_groups WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['success' => true]);

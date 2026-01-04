@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS registration_groups (
     paid BOOLEAN DEFAULT FALSE,
     adults_count INT DEFAULT 1,
     kids_count INT DEFAULT 0,
+    payment_method VARCHAR(50) DEFAULT 'Cash',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

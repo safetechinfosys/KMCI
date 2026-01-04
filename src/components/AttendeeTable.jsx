@@ -112,7 +112,14 @@ const AttendeeTable = ({ groups, onEdit, onDelete, onExport, onImport }) => {
                                             {group.adultsCount}A / {group.kidsCount}C
                                         </span>
                                     </td>
-                                    <td data-label="Fee" style={{ fontWeight: '700', color: 'var(--primary)' }}>€{group.totalFee}</td>
+                                    <td data-label="Fee" style={{ fontWeight: '700', color: 'var(--primary)' }}>
+                                        €{group.totalFee}
+                                        {group.paymentMethod && (
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>
+                                                via {group.paymentMethod}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td data-label="Status">
                                         <span className={`badge ${group.paid ? 'badge-success' : 'badge-error'}`}>
                                             {group.paid ? 'Paid' : 'Unpaid'}

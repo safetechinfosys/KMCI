@@ -23,4 +23,12 @@ export const FEES = {
 
 export const ADMIN_PASSWORD = 'password123';
 
-export const API_URL = 'api.php'; // Works perfectly if index.html and api.php are in the same folder
+export const PAYMENT_METHODS = [
+    'Cash',
+    'Revolut',
+    'Sumup',
+    'Bank Transfer',
+    'Other'
+];
+
+export const API_URL = 'api.php'; 

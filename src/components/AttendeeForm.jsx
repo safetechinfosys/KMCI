@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, User, UserPlus, Save, Check } from 'lucide-react';
-import { IRISH_COUNTIES, KERALA_DISTRICTS, PROFESSIONS, FEES } from '../constants';
+import { IRISH_COUNTIES, KERALA_DISTRICTS, PROFESSIONS, FEES, PAYMENT_METHODS } from '../constants';
 
 const AttendeeForm = ({ group, onClose, onSave }) => {
     const [formData, setFormData] = useState({
         name: '',
         paid: false,
+        totalFee: 0,
+        paymentMethod: 'Cash',
         attendees: [
             {
                 id: Date.now(),
@@ -27,34 +29,55 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
     useEffect(() => {
         if (group) {
             setFormData(group);
+        } else {
+            // Auto-calculate initial fee for new groups
+            setFormData(prev => ({ ...prev, totalFee: calculateTotalFor(prev.attendees) }));
         }
     }, [group]);
 
+    const calculateTotalFor = (attendeeList) => {
+        const adults = attendeeList.filter(a => a.type === 'adult').length;
+        const kids = attendeeList.filter(a => a.type === 'child').length;
+        return (adults * FEES.ADULT) + (kids * FEES.CHILD);
+    };
+
     const addMember = (type) => {
-        setFormData(prev => ({
-            ...prev,
-            attendees: [...prev.attendees, {
-                id: Date.now(),
-                name: '',
-                type,
-                arrived: false,
-                profession: '',
-                irishCounty: '',
-                keralaDistrict: '',
-                eircode: '',
-                addressKerala: '',
-                whatsapp: '',
-                mobile: '',
-                email: ''
-            }]
-        }));
+        const newMember = {
+            id: Date.now(),
+            name: '',
+            type,
+            arrived: false,
+            profession: '',
+            irishCounty: '',
+            keralaDistrict: '',
+            eircode: '',
+            addressKerala: '',
+            whatsapp: '',
+            mobile: '',
+            email: ''
+        };
+
+        setFormData(prev => {
+            const newList = [...prev.attendees, newMember];
+            return {
+                ...prev,
+                attendees: newList,
+                // Only auto-update fee if user hasn't started manually editing? 
+                // Let's just auto-update it here to keep it simple, they can still change it.
+                totalFee: calculateTotalFor(newList)
+            };
+        });
     };
 
     const removeMember = (id) => {
-        setFormData(prev => ({
-            ...prev,
-            attendees: prev.attendees.filter(a => a.id !== id)
-        }));
+        setFormData(prev => {
+            const newList = prev.attendees.filter(a => a.id !== id);
+            return {
+                ...prev,
+                attendees: newList,
+                totalFee: calculateTotalFor(newList)
+            };
+        });
     };
 
     const updateMember = (id, field, value) => {
@@ -64,19 +87,12 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
         }));
     };
 
-    const calculateTotal = () => {
-        const adults = formData.attendees.filter(a => a.type === 'adult').length;
-        const kids = formData.attendees.filter(a => a.type === 'child').length;
-        return (adults * FEES.ADULT) + (kids * FEES.CHILD);
-    };
-
     const handleSubmit = (e) => {
         e.preventDefault();
         const leadName = formData.attendees[0]?.name || 'Unknown';
         onSave({
             ...formData,
             name: leadName,
-            totalFee: calculateTotal(),
             adultsCount: formData.attendees.filter(a => a.type === 'adult').length,
             kidsCount: formData.attendees.filter(a => a.type === 'child').length
         });
@@ -160,7 +176,7 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                                                 <label>Irish County</label>
                                                 <select
                                                     className="input"
-                                                    value={member.irishCounty}
+                                                    value={member.irishCounty || ''}
                                                     onChange={(e) => updateMember(member.id, 'irishCounty', e.target.value)}
                                                 >
                                                     <option value="">Select County</option>
@@ -171,7 +187,7 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                                                 <label>Kerala District</label>
                                                 <select
                                                     className="input"
-                                                    value={member.keralaDistrict}
+                                                    value={member.keralaDistrict || ''}
                                                     onChange={(e) => updateMember(member.id, 'keralaDistrict', e.target.value)}
                                                 >
                                                     <option value="">Select District</option>
@@ -220,7 +236,7 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                                                 <textarea
                                                     className="input"
                                                     rows="2"
-                                                    value={member.addressKerala}
+                                                    value={member.addressKerala || ''}
                                                     onChange={(e) => updateMember(member.id, 'addressKerala', e.target.value)}
                                                     placeholder="House name, City, etc."
                                                 />
@@ -232,26 +248,48 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                         ))}
                     </div>
 
-                    <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: '2rem' }}>
-                            <div>
-                                <label>Total Fee</label>
-                                <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>€{calculateTotal()}</div>
+                    <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                        <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
+                            <div className="field-group">
+                                <label>Payment Amount (€)</label>
+                                <input
+                                    type="number"
+                                    className="input"
+                                    value={formData.totalFee}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, totalFee: parseFloat(e.target.value) || 0 }))}
+                                />
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                    Standard calculation: €{calculateTotalFor(formData.attendees)}
+                                </p>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+                            <div className="field-group">
+                                <label>Payment Method</label>
+                                <select
+                                    className="input"
+                                    value={formData.paymentMethod}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                                >
+                                    {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            </div>
+                            <div className="field-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '1.5rem' }}>
                                 <input
                                     type="checkbox"
                                     id="paid"
-                                    style={{ width: '20px', height: '20px' }}
+                                    style={{ width: '22px', height: '22px' }}
                                     checked={formData.paid}
                                     onChange={(e) => setFormData(prev => ({ ...prev, paid: e.target.checked }))}
                                 />
-                                <label htmlFor="paid" style={{ color: 'var(--text)', fontSize: '1rem' }}>Mark as Paid</label>
+                                <label htmlFor="paid" style={{ color: 'var(--text)', fontSize: '1rem', cursor: 'pointer' }}>Mark as Paid</label>
                             </div>
                         </div>
-                        <button type="submit" className="btn btn-primary">
-                            <Save size={18} /> {group ? 'Update Registration' : 'Complete Registration'}
-                        </button>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                            <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+                            <button type="submit" className="btn btn-primary">
+                                <Save size={18} /> {group ? 'Update Registration' : 'Complete Registration'}
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

@@ -34,6 +34,7 @@ function App() {
           id: parseInt(group.id),
           totalFee: parseFloat(group.total_fee),
           paid: Boolean(parseInt(group.paid)),
+          paymentMethod: group.payment_method,
           adultsCount: parseInt(group.adults_count),
           kidsCount: parseInt(group.kids_count),
           attendees: data.attendees
@@ -41,7 +42,11 @@ function App() {
             .map(a => ({
               ...a,
               id: parseInt(a.id),
-              arrived: Boolean(parseInt(a.arrived))
+              groupId: parseInt(a.group_id),
+              arrived: Boolean(parseInt(a.arrived)),
+              irishCounty: a.irish_county,
+              keralaDistrict: a.kerala_district,
+              addressKerala: a.address_kerala
             }))
         }));
         setGroups(groupsWithAttendees);
