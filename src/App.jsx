@@ -140,68 +140,67 @@ function App() {
       try {
         const text = event.target.result;
         const lines = text.split('\n');
-        const headers = lines[0].split(',');
 
-        // Group by group name to rebuild groups
-        const groupsToCreate = {};
+        // Skip empty lines
+        const dataLines = lines.filter(line => line.trim().length > 0);
 
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
+        for (let i = 0; i < dataLines.length; i++) {
+          const line = dataLines[i];
+          // Try to parse both CSV and standard "Name: X Adults" format
+          let name = '', adults = 1, kids = 0, isPaid = false;
 
-          // Simple CSV parser (doesn't handle commas in quotes perfectly, but sufficient for this schema)
-          const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, ''));
+          if (line.includes(':') || line.includes('Adult')) {
+            // Format: "Janeesh : 2 Adults" or "Shoukkathali: 2 Adults and 2 Kids ✅🅿️"
+            const parts = line.split(':');
+            name = parts[0].replace(/^\d+\.\s*/, '').trim(); // Remove "1. " numbering
 
-          const [groupName, fee, paidStatus, memberName, type, arrived, profession, irishCounty, keralaDistrict, eircode, whatsapp, mobile, email] = cols;
+            const details = parts[1] || '';
+            const adultMatch = details.match(/(\d+)\s*Adult/i);
+            const kidMatch = details.match(/(\d+)\s*Kid/i);
 
-          if (!groupsToCreate[groupName]) {
-            groupsToCreate[groupName] = {
-              name: groupName,
-              totalFee: parseFloat(fee) || 0,
-              paid: paidStatus === 'Paid',
-              createdAt: new Date(),
-              attendees: []
-            };
+            adults = adultMatch ? parseInt(adultMatch[1]) : 1;
+            kids = kidMatch ? parseInt(kidMatch[1]) : 0;
+            isPaid = details.includes('✅🅿️') || details.toLowerCase().includes('paid');
+          } else {
+            // Simple CSV format: Name, Adults, Kids, Paid
+            const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+            if (cols.length < 2) continue;
+            name = cols[0];
+            adults = parseInt(cols[1]) || 1;
+            kids = parseInt(cols[2]) || 0;
+            isPaid = cols[3]?.toLowerCase() === 'paid' || cols[3]?.includes('✅🅿️');
           }
 
-          groupsToCreate[groupName].attendees.push({
-            name: memberName,
-            type: type || 'adult',
-            arrived: arrived === 'Yes',
-            profession,
-            irishCounty,
-            keralaDistrict,
-            eircode,
-            whatsapp,
-            mobile,
-            email
-          });
-        }
+          if (!name) continue;
 
-        // Save to DB
-        for (const gName in groupsToCreate) {
-          const g = groupsToCreate[gName];
-          const groupId = await db.groups.add({
-            name: g.name,
-            totalFee: g.totalFee,
-            paid: g.paid,
-            createdAt: g.createdAt,
-            adultsCount: g.attendees.filter(a => a.type === 'adult').length,
-            kidsCount: g.attendees.filter(a => a.type === 'child').length
-          });
+          // Create attendee list based on counts
+          const attendeeList = [];
+          for (let a = 0; a < adults; a++) {
+            attendeeList.push({ name: a === 0 ? name : `${name} (Adult ${a + 1})`, type: 'adult', arrived: false });
+          }
+          for (let k = 0; k < kids; k++) {
+            attendeeList.push({ name: `${name} (Kid ${k + 1})`, type: 'child', arrived: false });
+          }
 
-          const attendeesToSave = g.attendees.map(a => ({ ...a, groupId }));
-          await db.attendees.bulkAdd(attendeesToSave);
+          // Save to MySQL
+          await handleSaveGroup({
+            name,
+            paid: isPaid,
+            totalFee: (adults * 8) + (kids * 5), // Default calculation
+            paymentMethod: 'Cash',
+            attendees: attendeeList
+          });
         }
 
         alert('Import successful!');
         loadData();
       } catch (err) {
         console.error(err);
-        alert('Error importing CSV. Please check the file format.');
+        alert('Error importing data. Please check the format.');
       }
     };
     reader.readAsText(file);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
   };
 
   if (!isLoggedIn) {

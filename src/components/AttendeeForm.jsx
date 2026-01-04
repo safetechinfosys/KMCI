@@ -87,6 +87,30 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
         }));
     };
 
+    const copyWhatsAppToMobile = (id) => {
+        setFormData(prev => ({
+            ...prev,
+            attendees: prev.attendees.map(a => {
+                if (a.id === id) {
+                    return { ...a, mobile: a.whatsapp };
+                }
+                return a;
+            })
+        }));
+    };
+
+    const syncAddressToAll = (sourceMember) => {
+        setFormData(prev => ({
+            ...prev,
+            attendees: prev.attendees.map(a => ({
+                ...a,
+                irishCounty: sourceMember.irishCounty,
+                addressKerala: sourceMember.addressKerala,
+                eircode: sourceMember.eircode
+            }))
+        }));
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const leadName = formData.attendees[0]?.name || 'Unknown';
@@ -173,7 +197,20 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                                                 </select>
                                             </div>
                                             <div className="field-group">
-                                                <label>Irish County</label>
+                                                <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    Irish County
+                                                    {index === 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => syncAddressToAll(member)}
+                                                            className="btn btn-outline"
+                                                            style={{ padding: '2px 8px', fontSize: '0.65rem', height: 'auto', minWidth: 'auto' }}
+                                                            title="Apply this county/address to all members"
+                                                        >
+                                                            Sync to All
+                                                        </button>
+                                                    )}
+                                                </label>
                                                 <select
                                                     className="input"
                                                     value={member.irishCounty || ''}
@@ -204,7 +241,17 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                                                 />
                                             </div>
                                             <div className="field-group">
-                                                <label>WhatsApp</label>
+                                                <label style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    WhatsApp
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => copyWhatsAppToMobile(member.id)}
+                                                        className="btn btn-outline"
+                                                        style={{ padding: '2px 8px', fontSize: '0.65rem', height: 'auto', minWidth: 'auto' }}
+                                                    >
+                                                        Copy to Mobile
+                                                    </button>
+                                                </label>
                                                 <input
                                                     className="input"
                                                     value={member.whatsapp}
