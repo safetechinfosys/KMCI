@@ -23,4 +23,4 @@ export const FEES = {
 
 export const ADMIN_PASSWORD = 'password123';
 
-export const API_URL = 'https://safetechinfosys.com/api.php'; 
+export const API_URL = 'api.php'; // Works perfectly if index.html and api.php are in the same folder
