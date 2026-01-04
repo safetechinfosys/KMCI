@@ -7,7 +7,7 @@ header("Content-Type: application/json");
 // --- CONFIGURATION ---
 $host = '193.203.184.215'; // Use 'localhost' on Hostinger for better speed
 $db   = 'u895470646_KMCI';
-$user = 'Administrator';
+$user = 'u895470646_administrator';
 $pass = '0^qi7N:t';
 $charset = 'utf8mb4';
 

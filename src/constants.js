@@ -23,4 +23,4 @@ export const FEES = {
 
 export const ADMIN_PASSWORD = 'password123';
 
-export const API_URL = 'https://safetechinfosys.com/api.php'; 
+export const API_URL = 'http://safetechinfosys.com/api.php'; 
