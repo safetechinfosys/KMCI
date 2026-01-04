@@ -106,19 +106,19 @@ const AttendeeTable = ({ groups, onEdit, onDelete, onExport, onImport }) => {
                         {filteredGroups.map(group => (
                             <React.Fragment key={group.id}>
                                 <tr>
-                                    <td style={{ fontWeight: '600' }}>{group.name}</td>
-                                    <td>
+                                    <td data-label="Lead Name" style={{ fontWeight: '600' }}>{group.name}</td>
+                                    <td data-label="Members">
                                         <span className="badge" style={{ background: 'var(--surface-light)', color: 'var(--text)' }}>
                                             {group.adultsCount}A / {group.kidsCount}K
                                         </span>
                                     </td>
-                                    <td style={{ fontWeight: '700', color: 'var(--primary)' }}>€{group.totalFee}</td>
-                                    <td>
+                                    <td data-label="Fee" style={{ fontWeight: '700', color: 'var(--primary)' }}>€{group.totalFee}</td>
+                                    <td data-label="Status">
                                         <span className={`badge ${group.paid ? 'badge-success' : 'badge-error'}`}>
                                             {group.paid ? 'Paid' : 'Unpaid'}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="Arrival">
                                         <div style={{ display: 'flex', gap: '4px' }}>
                                             {group.attendees.map((a, i) => (
                                                 <div
@@ -134,7 +134,7 @@ const AttendeeTable = ({ groups, onEdit, onDelete, onExport, onImport }) => {
                                             ))}
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Actions">
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             <button className="btn btn-outline" style={{ padding: '0.4rem' }} onClick={() => setExpandedId(expandedId === group.id ? null : group.id)}>
                                                 <Filter size={16} />

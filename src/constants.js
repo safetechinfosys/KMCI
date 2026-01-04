@@ -17,8 +17,8 @@ export const PROFESSIONS = [
 ];
 
 export const FEES = {
-    ADULT: 20,
-    CHILD: 10
+    ADULT: 8,
+    CHILD: 5
 };
 
 export const ADMIN_PASSWORD = 'password123'; // In a real app, this would be env/hashed

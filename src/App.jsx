@@ -124,8 +124,77 @@ function App() {
     document.body.removeChild(link);
   };
 
-  const handleImportCSV = () => {
-    alert('Import feature coming soon! Please use the Add Group button for now.');
+  const handleImportCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const lines = text.split('\n');
+        const headers = lines[0].split(',');
+
+        // Group by group name to rebuild groups
+        const groupsToCreate = {};
+
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+
+          // Simple CSV parser (doesn't handle commas in quotes perfectly, but sufficient for this schema)
+          const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, ''));
+
+          const [groupName, fee, paidStatus, memberName, type, arrived, profession, irishCounty, keralaDistrict, eircode, whatsapp, mobile, email] = cols;
+
+          if (!groupsToCreate[groupName]) {
+            groupsToCreate[groupName] = {
+              name: groupName,
+              totalFee: parseFloat(fee) || 0,
+              paid: paidStatus === 'Paid',
+              createdAt: new Date(),
+              attendees: []
+            };
+          }
+
+          groupsToCreate[groupName].attendees.push({
+            name: memberName,
+            type: type || 'adult',
+            arrived: arrived === 'Yes',
+            profession,
+            irishCounty,
+            keralaDistrict,
+            eircode,
+            whatsapp,
+            mobile,
+            email
+          });
+        }
+
+        // Save to DB
+        for (const gName in groupsToCreate) {
+          const g = groupsToCreate[gName];
+          const groupId = await db.groups.add({
+            name: g.name,
+            totalFee: g.totalFee,
+            paid: g.paid,
+            createdAt: g.createdAt,
+            adultsCount: g.attendees.filter(a => a.type === 'adult').length,
+            kidsCount: g.attendees.filter(a => a.type === 'child').length
+          });
+
+          const attendeesToSave = g.attendees.map(a => ({ ...a, groupId }));
+          await db.attendees.bulkAdd(attendeesToSave);
+        }
+
+        alert('Import successful!');
+        loadData();
+      } catch (err) {
+        console.error(err);
+        alert('Error importing CSV. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset input
   };
 
   if (!isLoggedIn) {
@@ -134,6 +203,14 @@ function App() {
 
   return (
     <div className="container">
+      <input
+        type="file"
+        id="csvImport"
+        accept=".csv"
+        style={{ display: 'none' }}
+        onChange={handleImportCSV}
+      />
+
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'var(--primary)', padding: '0.75rem', borderRadius: '12px' }}>
@@ -161,7 +238,7 @@ function App() {
         onEdit={(g) => { setEditingGroup(g); setIsFormOpen(true); }}
         onDelete={handleDeleteGroup}
         onExport={handleExportCSV}
-        onImport={handleImportCSV}
+        onImport={() => document.getElementById('csvImport').click()}
       />
 
       {isFormOpen && (
@@ -172,8 +249,12 @@ function App() {
         />
       )}
 
-      <footer style={{ marginTop: '4rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-        &copy; 2024 SafeTech Event Management System. Built with React & DexieDB.
+      <footer style={{ marginTop: '4rem', padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', borderTop: '1px solid var(--border)' }}>
+        <p>&copy; 2024 SafeTech Event Management System.</p>
+        <p style={{ marginTop: '0.5rem', opacity: 0.8 }}>
+          Built with <strong>React</strong> & <strong>DexieDB</strong> (Standalone Browser Database).
+          <br /> All data is stored locally in your browser for privacy and speed.
+        </p>
       </footer>
     </div>
   );
