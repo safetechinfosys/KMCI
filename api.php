@@ -5,7 +5,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 // --- CONFIGURATION ---
-$host = 'localhost'; // Usually localhost on Hostinger
+$host = 'localhost'; // Use 'localhost' on Hostinger for better speed
 $db   = 'u895470646_KMCI';
 $user = 'Administrator';
 $pass = '0^qi7N:t';
@@ -21,7 +21,8 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-    echo json_encode(['error' => 'Connection failed: ' . $e->getMessage()]);
+    http_response_code(500);
+    echo json_encode(['error' => 'Database Connection failed: ' . $e->getMessage()]);
     exit;
 }
 
@@ -55,7 +56,7 @@ if ($method === 'POST') {
             if (isset($data['id']) && $data['id']) {
                 // Update
                 $stmt = $pdo->prepare("UPDATE registration_groups SET name=?, total_fee=?, paid=?, adults_count=?, kids_count=? WHERE id=?");
-                $stmt->execute([$data['name'], $data['totalFee'], $data['paid'], $data['adultsCount'], $data['kidsCount'], $data['id']]);
+                $stmt->execute([$data['name'], $data['totalFee'], (int)$data['paid'], $data['adultsCount'], $data['kidsCount'], $data['id']]);
                 $groupId = $data['id'];
                 
                 // Delete existing attendees
@@ -64,7 +65,7 @@ if ($method === 'POST') {
             } else {
                 // Insert
                 $stmt = $pdo->prepare("INSERT INTO registration_groups (name, total_fee, paid, adults_count, kids_count) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$data['name'], $data['totalFee'], $data['paid'], $data['adultsCount'], $data['kidsCount']]);
+                $stmt->execute([$data['name'], $data['totalFee'], (int)$data['paid'], $data['adultsCount'], $data['kidsCount']]);
                 $groupId = $pdo->lastInsertId();
             }
 
@@ -72,10 +73,18 @@ if ($method === 'POST') {
             $stmtAtt = $pdo->prepare("INSERT INTO attendees (group_id, name, type, arrived, profession, irish_county, kerala_district, email, whatsapp, mobile, address_kerala, eircode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($data['attendees'] as $a) {
                 $stmtAtt->execute([
-                    $groupId, $a['name'], $a['type'], $a['arrived'], 
-                    $a['profession'] ?? null, $a['irishCounty'] ?? null, $a['keralaDistrict'] ?? null,
-                    $a['email'] ?? null, $a['whatsapp'] ?? null, $a['mobile'] ?? null,
-                    $a['addressKerala'] ?? null, $a['eircode'] ?? null
+                    $groupId, 
+                    $a['name'], 
+                    $a['type'], 
+                    (int)($a['arrived'] ?? 0), 
+                    $a['profession'] ?? null, 
+                    $a['irishCounty'] ?? null, 
+                    $a['keralaDistrict'] ?? null,
+                    $a['email'] ?? null, 
+                    $a['whatsapp'] ?? null, 
+                    $a['mobile'] ?? null,
+                    $a['addressKerala'] ?? null, 
+                    $a['eircode'] ?? null
                 ]);
             }
 
@@ -91,6 +100,7 @@ if ($method === 'POST') {
 if ($method === 'DELETE') {
     $id = $_GET['id'] ?? null;
     if ($id) {
+        // Cascade delete will handle attendees if FK is set correctly
         $stmt = $pdo->prepare("DELETE FROM registration_groups WHERE id = ?");
         $stmt->execute([$id]);
         echo json_encode(['success' => true]);

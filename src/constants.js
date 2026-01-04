@@ -23,4 +23,4 @@ export const FEES = {
 
 export const ADMIN_PASSWORD = 'password123';
 
-export const API_URL = 'api.php'; // Set this to the full URL if hosted separately, e.g. 'https://yourdomain.com/api.php'
+export const API_URL = 'https://kmci.safetechinfosys.com/api.php'; 
