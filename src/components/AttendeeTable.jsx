@@ -109,7 +109,7 @@ const AttendeeTable = ({ groups, onEdit, onDelete, onExport, onImport }) => {
                                     <td data-label="Lead Name" style={{ fontWeight: '600' }}>{group.name}</td>
                                     <td data-label="Members">
                                         <span className="badge" style={{ background: 'var(--surface-light)', color: 'var(--text)' }}>
-                                            {group.adultsCount}A / {group.kidsCount}K
+                                            {group.adultsCount}A / {group.kidsCount}C
                                         </span>
                                     </td>
                                     <td data-label="Fee" style={{ fontWeight: '700', color: 'var(--primary)' }}>€{group.totalFee}</td>
