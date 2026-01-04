@@ -5,7 +5,7 @@ header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 // --- CONFIGURATION ---
-$host = 'localhost'; // Use 'localhost' on Hostinger for better speed
+$host = '193.203.184.215'; // Use 'localhost' on Hostinger for better speed
 $db   = 'u895470646_KMCI';
 $user = 'Administrator';
 $pass = '0^qi7N:t';
