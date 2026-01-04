@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { db } from './db';
 import Login from './components/Login';
 import Stats from './components/Stats';
 import AttendeeTable from './components/AttendeeTable';
 import AttendeeForm from './components/AttendeeForm';
 import { LayoutDashboard, PlusCircle, LogOut } from 'lucide-react';
+import { API_URL } from './constants';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -14,25 +14,42 @@ function App() {
   const [editingGroup, setEditingGroup] = useState(null);
 
   useEffect(() => {
-    // Check local storage for session
     const session = localStorage.getItem('eventSession');
     if (session) setIsLoggedIn(true);
 
     loadData();
+    // Real-time update: Poll API every 5 seconds
+    const interval = setInterval(loadData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
-    const allGroups = await db.groups.toArray();
-    const allAttendees = await db.attendees.toArray();
+    try {
+      const response = await fetch(`${API_URL}?action=get_all`);
+      const data = await response.json();
 
-    // Attach attendees to groups for easier rendering
-    const groupsWithAttendees = allGroups.map(group => ({
-      ...group,
-      attendees: allAttendees.filter(a => a.groupId === group.id)
-    }));
-
-    setGroups(groupsWithAttendees);
-    setAttendees(allAttendees);
+      if (data.groups && data.attendees) {
+        const groupsWithAttendees = data.groups.map(group => ({
+          ...group,
+          id: parseInt(group.id),
+          totalFee: parseFloat(group.total_fee),
+          paid: Boolean(parseInt(group.paid)),
+          adultsCount: parseInt(group.adults_count),
+          kidsCount: parseInt(group.kids_count),
+          attendees: data.attendees
+            .filter(a => parseInt(a.group_id) === parseInt(group.id))
+            .map(a => ({
+              ...a,
+              id: parseInt(a.id),
+              arrived: Boolean(parseInt(a.arrived))
+            }))
+        }));
+        setGroups(groupsWithAttendees);
+        setAttendees(data.attendees.map(a => ({ ...a, arrived: Boolean(parseInt(a.arrived)) })));
+      }
+    } catch (err) {
+      console.error("Failed to load data from MySQL:", err);
+    }
   };
 
   const handleLogin = () => {
@@ -46,47 +63,32 @@ function App() {
   };
 
   const handleSaveGroup = async (formData) => {
-    const { attendees: memberList, ...groupData } = formData;
-
-    let groupId;
-    if (groupData.id) {
-      // Update existing
-      await db.groups.update(groupData.id, {
-        name: groupData.name,
-        adultsCount: groupData.adultsCount,
-        kidsCount: groupData.kidsCount,
-        totalFee: groupData.totalFee,
-        paid: groupData.paid
+    try {
+      const response = await fetch(`${API_URL}?action=save_group`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
       });
-      groupId = groupData.id;
-      // Simple strategy: delete existing attendees for this group and re-add
-      await db.attendees.where('groupId').equals(groupId).delete();
-    } else {
-      // Create new
-      groupId = await db.groups.add({
-        ...groupData,
-        createdAt: new Date()
-      });
+      const result = await response.json();
+      if (result.success) {
+        setIsFormOpen(false);
+        setEditingGroup(null);
+        loadData();
+      } else {
+        alert("Error saving: " + result.error);
+      }
+    } catch (err) {
+      console.error("Save failed:", err);
     }
-
-    // Add attendees
-    const attendeesToSave = memberList.map(a => {
-      const { id, ...rest } = a; // Strip temporary client side IDs
-      return { ...rest, groupId };
-    });
-
-    await db.attendees.bulkAdd(attendeesToSave);
-
-    setIsFormOpen(false);
-    setEditingGroup(null);
-    loadData();
   };
 
   const handleDeleteGroup = async (id) => {
-    if (confirm('Are you sure you want to delete this group?')) {
-      await db.groups.delete(id);
-      await db.attendees.where('groupId').equals(id).delete();
+    if (!confirm('Are you sure you want to delete this group?')) return;
+    try {
+      await fetch(`${API_URL}&action=delete&id=${id}`, { method: 'DELETE' });
       loadData();
+    } catch (err) {
+      console.error("Delete failed:", err);
     }
   };
 

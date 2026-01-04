@@ -21,4 +21,6 @@ export const FEES = {
     CHILD: 5
 };
 
-export const ADMIN_PASSWORD = 'password123'; // In a real app, this would be env/hashed
+export const ADMIN_PASSWORD = 'password123';
+
+export const API_URL = 'api.php'; // Set this to the full URL if hosted separately, e.g. 'https://yourdomain.com/api.php'
