@@ -50,13 +50,6 @@ const Stats = ({ groups, attendees }) => {
                 icon={Euro}
                 color="245, 158, 11"
             />
-            <StatCard
-                title="Total Groups"
-                value={groups.length}
-                subtext="Registered families/groups"
-                icon={UserPlus}
-                color="236, 72, 153"
-            />
         </div>
     );
 };

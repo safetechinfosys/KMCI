@@ -108,7 +108,11 @@ const AttendeeForm = ({ group, onClose, onSave }) => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                     <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {member.type === 'adult' ? <User size={18} /> : <Plus size={18} />}
-                                        {member.type.charAt(0).toUpperCase() + member.type.slice(1)} {index + 1}
+                                        {member.type.charAt(0).toUpperCase() + member.type.slice(1)} {
+                                            formData.attendees
+                                                .filter((a, i) => a.type === member.type && i <= index)
+                                                .length
+                                        }
                                     </h3>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
